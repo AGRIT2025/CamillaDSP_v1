@@ -90,15 +90,22 @@ export function VolumeControl() {
       setFaders(prev => ({ ...prev, main: { volume, mute } }))
 
       try {
-        const f = await camillaAPI.getFaders()
-        setFaders({
-          main: { volume: f.main.volume, mute: f.main.mute },
-          aux1: { volume: f.aux1.volume, mute: f.aux1.mute },
-          aux2: { volume: f.aux2.volume, mute: f.aux2.mute },
-          aux3: { volume: f.aux3.volume, mute: f.aux3.mute },
-          aux4: { volume: f.aux4.volume, mute: f.aux4.mute },
-        })
-        setHasFaders(true)
+        const [volumes, mutes] = await Promise.all([
+          camillaAPI.getAllFaderVolumes(),
+          camillaAPI.getAllFaderMutes(),
+        ])
+        if (volumes.length > 1) {
+          setFaders({
+            main: { volume: volumes[0] ?? 0, mute: mutes[0] ?? false },
+            aux1: { volume: volumes[1] ?? 0, mute: mutes[1] ?? false },
+            aux2: { volume: volumes[2] ?? 0, mute: mutes[2] ?? false },
+            aux3: { volume: volumes[3] ?? 0, mute: mutes[3] ?? false },
+            aux4: { volume: volumes[4] ?? 0, mute: mutes[4] ?? false },
+          })
+          setHasFaders(true)
+        } else {
+          setHasFaders(false)
+        }
       } catch {
         setHasFaders(false)
       }
@@ -119,7 +126,8 @@ export function VolumeControl() {
   }
 
   const toggleMute = async (fader: number) => {
-    await camillaAPI.toggleFaderMute(fader)
+    const currentMutes = await camillaAPI.getAllFaderMutes()
+    await camillaAPI.setFaderMute(fader, !(currentMutes[fader] ?? false))
     await refresh()
   }
 

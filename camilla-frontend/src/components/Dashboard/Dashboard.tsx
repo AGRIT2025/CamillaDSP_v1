@@ -1,28 +1,45 @@
 import { useEngineStatus } from '@/hooks/useWebSocket'
 import { camillaAPI, formatDb } from '@/lib/camillaAPI'
 import { Card, StatCard } from '@/components/ui/Card'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ChannelMeters } from '@/components/ui/LevelMeter'
 
+const STATE_CONFIG = {
+  RUNNING:  { label: 'Running',  color: 'text-[#22c55e]', dot: 'bg-[#22c55e]' },
+  PAUSED:   { label: 'Paused',   color: 'text-[#eab308]', dot: 'bg-[#eab308]' },
+  STARTING: { label: 'Starting', color: 'text-[#6366f1]', dot: 'bg-[#6366f1]' },
+  INACTIVE: { label: 'Inactive', color: 'text-[#55556a]', dot: 'bg-[#55556a]' },
+  STALLED:  { label: 'Stalled',  color: 'text-[#ef4444]', dot: 'bg-[#ef4444]' },
+}
+
 export function Dashboard() {
-  const status = useEngineStatus(200)
+  const status = useEngineStatus(300)
 
-  const capPeaks = status.signalLevels?.capture_peak ?? []
-  const capRms   = status.signalLevels?.capture_rms   ?? []
-  const pbPeaks  = status.signalLevels?.playback_peak ?? []
-  const pbRms    = status.signalLevels?.playback_rms  ?? []
-
-  const handleResetClipped = async () => {
-    await camillaAPI.resetClippedSamples()
-  }
+  const cfg = status.state ? STATE_CONFIG[status.state] : null
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Estado principal */}
+      {/* Estado */}
       <div className="flex items-center justify-between">
-        <StatusBadge state={status.state} />
+        <div className="flex items-center gap-2">
+          {cfg ? (
+            <>
+              <span className={`w-2 h-2 rounded-full animate-pulse ${cfg.dot}`} />
+              <span className={`text-sm font-medium ${cfg.color}`}>{cfg.label}</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-[#55556a]" />
+              <span className="text-sm text-[#55556a]">Disconnected</span>
+            </>
+          )}
+        </div>
         {!status.connected && (
           <span className="text-xs text-[#ef4444]">Engine no disponible</span>
+        )}
+        {status.connected && status.raw && (
+          <span className="text-xs text-[#55556a]">
+            CamillaDSP {status.raw.cdsp_version} · Backend {status.raw.backend_version}
+          </span>
         )}
       </div>
 
@@ -36,13 +53,13 @@ export function Dashboard() {
         />
         <StatCard
           label="Capture Rate"
-          value={(status.captureRate / 1000).toFixed(1)}
-          unit="kHz"
+          value={status.captureRate > 0 ? (status.captureRate / 1000).toFixed(1) : '—'}
+          unit={status.captureRate > 0 ? 'kHz' : ''}
         />
         <StatCard
           label="Buffer Level"
           value={status.bufferLevel}
-          unit="chunks"
+          unit="smp"
         />
         <StatCard
           label="Clipped"
@@ -54,46 +71,43 @@ export function Dashboard() {
       {/* Niveles de señal */}
       <div className="grid grid-cols-2 gap-4">
         <Card title="Capture Levels">
-          {capPeaks.length === 0 ? (
+          {status.capturePeak.length === 0 ? (
             <span className="text-sm text-[#55556a]">Sin señal</span>
           ) : (
-            <ChannelMeters peaks={capPeaks} rms={capRms} label="IN" />
+            <ChannelMeters peaks={status.capturePeak} rms={status.captureRms} label="IN" />
           )}
         </Card>
         <Card title="Playback Levels">
-          {pbPeaks.length === 0 ? (
+          {status.playbackPeak.length === 0 ? (
             <span className="text-sm text-[#55556a]">Sin señal</span>
           ) : (
-            <ChannelMeters peaks={pbPeaks} rms={pbRms} label="OUT" />
+            <ChannelMeters peaks={status.playbackPeak} rms={status.playbackRms} label="OUT" />
           )}
         </Card>
       </div>
 
-      {/* Volumen actual */}
+      {/* Volumen master */}
       <Card title="Master Volume">
         <div className="flex items-center gap-4">
           <span className="text-3xl font-bold tabular-nums text-[#f0f0ff]">
             {formatDb(status.volume)}
           </span>
-          <span
-            className={`text-sm px-2 py-1 rounded-md ${
-              status.mute
-                ? 'bg-[#ef444420] text-[#ef4444]'
-                : 'bg-[#22c55e20] text-[#22c55e]'
-            }`}
-          >
+          <span className={`text-sm px-2 py-1 rounded-md ${
+            status.mute
+              ? 'bg-[#ef444420] text-[#ef4444]'
+              : 'bg-[#22c55e20] text-[#22c55e]'
+          }`}>
             {status.mute ? 'MUTED' : 'LIVE'}
           </span>
         </div>
       </Card>
 
-      {/* Reset clipped */}
       {status.clippedSamples > 0 && (
         <button
-          onClick={handleResetClipped}
+          onClick={() => camillaAPI.setVolume(status.volume - 1)}
           className="text-xs text-[#ef4444] hover:text-[#f87171] underline self-start"
         >
-          Reset clipped samples counter
+          ⚠ {status.clippedSamples} muestras recortadas — bajar volumen
         </button>
       )}
     </div>

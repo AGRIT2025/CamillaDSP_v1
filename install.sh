@@ -254,9 +254,16 @@ cp -r "${BACKEND_SRC}/"* "${INSTALL_DIR}/backend/"
 info "Creando entorno virtual Python..."
 python3 -m venv "${INSTALL_DIR}/backend/venv"
 "${INSTALL_DIR}/backend/venv/bin/pip" install --quiet --upgrade pip
-"${INSTALL_DIR}/backend/venv/bin/pip" install --quiet -r "${INSTALL_DIR}/backend/requirements.txt" \
-  2>/dev/null || \
-"${INSTALL_DIR}/backend/venv/bin/pip" install --quiet aiohttp pyyaml
+
+# Instalar dependencias base del backend
+"${INSTALL_DIR}/backend/venv/bin/pip" install --quiet aiohttp aiohttp-index-redirect pyyaml
+
+# pycamilladsp y pycamilladsp-plot no están en PyPI — instalar desde GitHub
+info "Instalando pycamilladsp desde GitHub..."
+"${INSTALL_DIR}/backend/venv/bin/pip" install --quiet \
+  "camilladsp @ git+https://github.com/HEnquist/pycamilladsp.git" \
+  "camilladsp-plot @ git+https://github.com/HEnquist/pycamilladsp-plot.git"
+
 log "Backend Python instalado"
 
 # ─── 9. Instalar frontend compilado ───────────────────────────────────────────
@@ -280,17 +287,29 @@ header "Creando configuración inicial"
 
 mkdir -p "$CONFIG_DIR"
 
-# Config del backend Python
+# Config del backend Python (todos los campos requeridos)
 cat > "${CONFIG_DIR}/camillagui.yml" << GUICONFIG
 ---
 camilla_host: "localhost"
 camilla_port: 1234
 bind_address: "0.0.0.0"
 port: 5005
+ssl_certificate: null
+ssl_private_key: null
+gui_config_file: null
 config_dir: "${CONFIG_DIR}/configs"
 coeff_dir: "${CONFIG_DIR}/coeffs"
+default_config: "${CONFIG_DIR}/configs/default.yml"
+statefile_path: "${CONFIG_DIR}/statefile.yml"
 log_file: null
+on_set_active_config: null
+on_get_active_config: null
+supported_capture_types: null
+supported_playback_types: null
 GUICONFIG
+
+# Crear statefile con permisos correctos
+touch "${CONFIG_DIR}/statefile.yml"
 
 # Config inicial de CamillaDSP (ejemplo mínimo)
 mkdir -p "${CONFIG_DIR}/configs" "${CONFIG_DIR}/coeffs"
@@ -311,15 +330,14 @@ devices:
     type: Alsa
     channels: 2
     device: "hw:0,0"
-    format: S32LE
+    format: S32_LE
   playback:
     type: Alsa
     channels: 2
     device: "hw:0,0"
-    format: S32LE
+    format: S32_LE
 
 filters:
-  # Ejemplo: filtro de ganancia plana
   gain_flat:
     type: Gain
     parameters:
@@ -330,11 +348,7 @@ mixers: {}
 
 pipeline:
   - type: Filter
-    channel: 0
-    names:
-      - gain_flat
-  - type: Filter
-    channel: 1
+    channels: [0, 1]
     names:
       - gain_flat
 DEFAULTCFG
@@ -402,6 +416,11 @@ GUISVC
 systemctl daemon-reload
 systemctl enable camilladsp-engine.service camilladsp-gui.service
 log "Servicios systemd habilitados"
+
+# Ajustar permisos de instalación
+chown -R "${REAL_USER}:${REAL_USER}" "${INSTALL_DIR}/backend/build" 2>/dev/null || true
+chown "${REAL_USER}:${REAL_USER}" "${CONFIG_DIR}/statefile.yml" 2>/dev/null || true
+chmod -R 755 "${INSTALL_DIR}/backend/build" 2>/dev/null || true
 
 # ─── 12. Iniciar servicios ────────────────────────────────────────────────────
 header "Iniciando servicios"

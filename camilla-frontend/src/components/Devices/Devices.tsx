@@ -20,12 +20,13 @@ export function Devices() {
 
   const refresh = useCallback(async () => {
     try {
-      const [cfg, types] = await Promise.all([
+      const [cfg, backends] = await Promise.all([
         camillaAPI.getConfig(),
-        camillaAPI.getSupportedDeviceTypes(),
+        camillaAPI.getBackends(),
       ])
       setConfig(cfg)
-      setSupportedTypes(types)
+      // backends = [playback_types[], capture_types[]]
+      setSupportedTypes({ playback: backends[0], capture: backends[1] })
     } catch {
       setMessage('No se puede conectar al engine')
     } finally {
@@ -38,11 +39,11 @@ export function Devices() {
   const loadDevices = async (section: DeviceSection, backend: string) => {
     try {
       if (section === 'capture') {
-        const devs = await camillaAPI.getAvailableCaptureDevices(backend)
-        setCaptureDevices(devs.map((d) => d.name))
+        const devs = await camillaAPI.getCaptureDevices(backend)
+        setCaptureDevices(devs.map(([name]) => name))
       } else {
-        const devs = await camillaAPI.getAvailablePlaybackDevices(backend)
-        setPlaybackDevices(devs.map((d) => d.name))
+        const devs = await camillaAPI.getPlaybackDevices(backend)
+        setPlaybackDevices(devs.map(([name]) => name))
       }
     } catch {
       if (section === 'capture') setCaptureDevices([])

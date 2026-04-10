@@ -1,11 +1,11 @@
 import type { EngineState } from '@/lib/camillaAPI'
 
 const stateConfig: Record<EngineState, { label: string; color: string; dot: string }> = {
-  Running:  { label: 'Running',  color: 'text-[#22c55e]', dot: 'bg-[#22c55e]' },
-  Paused:   { label: 'Paused',   color: 'text-[#eab308]', dot: 'bg-[#eab308]' },
-  Starting: { label: 'Starting', color: 'text-[#6366f1]', dot: 'bg-[#6366f1]' },
-  Inactive: { label: 'Inactive', color: 'text-[#55556a]', dot: 'bg-[#55556a]' },
-  Stalled:  { label: 'Stalled',  color: 'text-[#ef4444]', dot: 'bg-[#ef4444]' },
+  RUNNING:  { label: 'Running',  color: 'text-[#22c55e]', dot: 'bg-[#22c55e]' },
+  PAUSED:   { label: 'Paused',   color: 'text-[#eab308]', dot: 'bg-[#eab308]' },
+  STARTING: { label: 'Starting', color: 'text-[#6366f1]', dot: 'bg-[#6366f1]' },
+  INACTIVE: { label: 'Inactive', color: 'text-[#55556a]', dot: 'bg-[#55556a]' },
+  STALLED:  { label: 'Stalled',  color: 'text-[#ef4444]', dot: 'bg-[#ef4444]' },
 }
 
 export function StatusBadge({ state }: { state: EngineState | null }) {
