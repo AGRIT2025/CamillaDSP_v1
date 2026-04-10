@@ -433,7 +433,7 @@ header "Instalación completada"
 
 echo ""
 echo -e "${BOLD}Accede a la GUI en:${NC}"
-echo -e "  ${CYAN}http://localhost:5005/gui${NC}"
+echo -e "  ${CYAN}http://localhost:5005/${NC}"
 echo ""
 echo -e "${BOLD}Archivos instalados:${NC}"
 echo -e "  Engine:   ${BIN_DIR}/camilladsp"

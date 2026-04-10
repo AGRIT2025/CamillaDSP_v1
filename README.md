@@ -68,9 +68,10 @@ Y realiza automáticamente:
 ### Paso 3 — Acceder a la GUI
 
 ```bash
-xdg-open http://localhost:5005/gui
+xdg-open http://localhost:5005/
 # o abre manualmente en tu navegador:
-# http://localhost:5005/gui
+# http://localhost:5005/
+# (redirige automáticamente a /gui/index.html)
 ```
 
 ---
@@ -95,7 +96,7 @@ aplay -L
 ### Editar la configuración inicial
 
 El instalador crea una configuración base en `/etc/camilladsp/configs/default.yml`.
-Puedes editarla directamente o usar la GUI en `http://localhost:5005/gui`.
+Puedes editarla directamente o usar la GUI en `http://localhost:5005/`.
 
 ```bash
 # Editar configuración
