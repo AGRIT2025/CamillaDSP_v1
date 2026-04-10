@@ -94,13 +94,16 @@ export function VolumeControl() {
           camillaAPI.getAllFaderVolumes(),
           camillaAPI.getAllFaderMutes(),
         ])
-        if (volumes.length > 1) {
+        // Verificar que sean arrays reales (el backend a veces devuelve "[]" string)
+        const vols = Array.isArray(volumes) ? volumes : []
+        const mts  = Array.isArray(mutes)   ? mutes   : []
+        if (vols.length > 1) {
           setFaders({
-            main: { volume: volumes[0] ?? 0, mute: mutes[0] ?? false },
-            aux1: { volume: volumes[1] ?? 0, mute: mutes[1] ?? false },
-            aux2: { volume: volumes[2] ?? 0, mute: mutes[2] ?? false },
-            aux3: { volume: volumes[3] ?? 0, mute: mutes[3] ?? false },
-            aux4: { volume: volumes[4] ?? 0, mute: mutes[4] ?? false },
+            main: { volume: Number(vols[0]) || 0, mute: Boolean(mts[0]) },
+            aux1: { volume: Number(vols[1]) || 0, mute: Boolean(mts[1]) },
+            aux2: { volume: Number(vols[2]) || 0, mute: Boolean(mts[2]) },
+            aux3: { volume: Number(vols[3]) || 0, mute: Boolean(mts[3]) },
+            aux4: { volume: Number(vols[4]) || 0, mute: Boolean(mts[4]) },
           })
           setHasFaders(true)
         } else {
@@ -121,13 +124,24 @@ export function VolumeControl() {
   }, [refresh])
 
   const setVolume = async (fader: number, db: number) => {
-    await camillaAPI.setFaderVolume(fader, db)
+    if (fader === 0) {
+      await camillaAPI.setVolume(db)
+    } else {
+      await camillaAPI.setFaderVolume(fader, db)
+    }
     await refresh()
   }
 
   const toggleMute = async (fader: number) => {
-    const currentMutes = await camillaAPI.getAllFaderMutes()
-    await camillaAPI.setFaderMute(fader, !(currentMutes[fader] ?? false))
+    if (fader === 0) {
+      // Fader principal: usar la API directa de mute
+      const current = await camillaAPI.getMute()
+      await camillaAPI.setMute(!current)
+    } else {
+      const raw = await camillaAPI.getAllFaderMutes()
+      const mutes = Array.isArray(raw) ? raw : []
+      await camillaAPI.setFaderMute(fader, !Boolean(mutes[fader]))
+    }
     await refresh()
   }
 

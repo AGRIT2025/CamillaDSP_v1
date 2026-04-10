@@ -36,7 +36,20 @@ async function apiGet<T>(path: string): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
   const text = await res.text()
   if (!text) return undefined as T
-  try { return JSON.parse(text) } catch { return text as unknown as T }
+  // El backend Python a veces devuelve booleanos en formato Python (no JSON válido)
+  if (text === 'True')  return true  as unknown as T
+  if (text === 'False') return false as unknown as T
+  try {
+    const parsed = JSON.parse(text)
+    // Algunos endpoints devuelven JSON doblemente codificado (string que contiene JSON)
+    // Ejemplo: "[]" en lugar de [] — hay que descodificar una vez más.
+    if (typeof parsed === 'string') {
+      try { return JSON.parse(parsed) as T } catch { /* no era JSON anidado */ }
+    }
+    return parsed as T
+  } catch {
+    return text as unknown as T
+  }
 }
 
 async function apiPost<T>(path: string, body?: unknown): Promise<T> {
@@ -104,6 +117,7 @@ export const camillaAPI = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function formatDb(value: number, decimals = 1): string {
+  if (typeof value !== 'number' || isNaN(value)) return '— dB'
   if (value === -Infinity || value < -150) return '-∞ dB'
   const sign = value >= 0 ? '+' : ''
   return `${sign}${value.toFixed(decimals)} dB`
