@@ -63,8 +63,8 @@ export function Dashboard() {
         />
         <StatCard
           label="Clipped"
-          value={status.clippedSamples}
-          warning={status.clippedSamples > 0}
+          value={status.clippedDelta > 0 ? `+${status.clippedDelta}` : status.clippedSamples}
+          warning={status.clippedDelta > 0}
         />
       </div>
 
@@ -102,12 +102,12 @@ export function Dashboard() {
         </div>
       </Card>
 
-      {status.clippedSamples > 0 && (
+      {status.clippedDelta > 0 && (
         <button
           onClick={() => camillaAPI.setVolume(status.volume - 1)}
           className="text-xs text-[#ef4444] hover:text-[#f87171] underline self-start"
         >
-          ⚠ {status.clippedSamples} muestras recortadas — bajar volumen
+          ⚠ {status.clippedDelta} muestras recortadas ahora — bajar volumen
         </button>
       )}
     </div>

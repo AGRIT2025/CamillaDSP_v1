@@ -33,7 +33,8 @@ export interface EngineStatus {
   processingLoad: number
   captureRate: number
   bufferLevel: number
-  clippedSamples: number
+  clippedSamples: number      // total acumulado desde inicio del engine
+  clippedDelta: number        // muestras recortadas en el último intervalo de polling
   captureRms: number[]
   capturePeak: number[]
   playbackRms: number[]
@@ -51,6 +52,7 @@ export function useEngineStatus(pollInterval = 500): EngineStatus {
     captureRate: 0,
     bufferLevel: 0,
     clippedSamples: 0,
+    clippedDelta: 0,
     captureRms: [],
     capturePeak: [],
     playbackRms: [],
@@ -61,6 +63,10 @@ export function useEngineStatus(pollInterval = 500): EngineStatus {
     raw: null,
   })
 
+  // Referencia al último total de clipped — permite calcular el delta por intervalo
+  // en lugar de mostrar el acumulado desde el inicio del engine.
+  const prevClippedRef = useRef<number | null>(null)
+
   usePolling({
     interval: pollInterval,
     fn: async () => {
@@ -69,12 +75,19 @@ export function useEngineStatus(pollInterval = 500): EngineStatus {
         camillaAPI.getVolume(),
         camillaAPI.getMute(),
       ])
+      const totalClipped = s.clippedsamples ?? 0
+      const delta = prevClippedRef.current !== null
+        ? Math.max(0, totalClipped - prevClippedRef.current)
+        : 0
+      prevClippedRef.current = totalClipped
+
       setStatus({
         state: s.cdsp_status,
         processingLoad: s.processingload * 100,
         captureRate: s.capturerate ?? 0,
         bufferLevel: s.bufferlevel,
-        clippedSamples: s.clippedsamples,
+        clippedSamples: totalClipped,
+        clippedDelta: delta,
         captureRms: s.capturesignalrms,
         capturePeak: s.capturesignalpeak,
         playbackRms: s.playbacksignalrms,
