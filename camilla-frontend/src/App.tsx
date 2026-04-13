@@ -5,20 +5,21 @@ import { Devices } from '@/components/Devices/Devices'
 import { Filters } from '@/components/Filters/Filters'
 import { Mixers } from '@/components/Mixers/Mixers'
 import { Pipeline } from '@/components/Pipeline/Pipeline'
+import { Crossovers } from '@/components/Crossovers/Crossovers'
 
-type Tab = 'dashboard' | 'volume' | 'devices' | 'filters' | 'mixers' | 'pipeline'
+type Tab = 'vumeters' | 'eq' | 'crossover' | 'mixer' | 'extras' | 'pipeline'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '◎' },
-  { id: 'volume',    label: 'Volume',    icon: '▲' },
-  { id: 'devices',   label: 'Devices',   icon: '⊞' },
-  { id: 'filters',   label: 'Filters',   icon: '∿' },
-  { id: 'mixers',    label: 'Mixers',    icon: '⇄' },
-  { id: 'pipeline',  label: 'Pipeline',  icon: '→' },
+  { id: 'vumeters',  label: 'VU Meters & Dynamic',  icon: '◉' },
+  { id: 'eq',       label: 'Equalizer IIR',    icon: '∿' },
+  { id: 'crossover',label: 'Crossovers',      icon: '⤮' },
+  { id: 'mixer',    label: 'Mixer Matrix',    icon: '⊞' },
+  { id: 'extras',   label: 'Extras',        icon: '⚙' },
+  { id: 'pipeline', label: 'Pipeline',      icon: '→' },
 ]
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard')
+  const [activeTab, setActiveTab] = useState<Tab>('vumeters')
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
@@ -57,12 +58,12 @@ export default function App() {
         {/* Contenido */}
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-5xl mx-auto">
-            {activeTab === 'dashboard' && <Dashboard />}
-            {activeTab === 'volume'    && <VolumeControl />}
-            {activeTab === 'devices'   && <Devices />}
-            {activeTab === 'filters'   && <Filters />}
-            {activeTab === 'mixers'    && <Mixers />}
-            {activeTab === 'pipeline'  && <Pipeline />}
+            {activeTab === 'vumeters'   && <VolumeControl />}
+            {activeTab === 'eq'        && <Filters />}
+            {activeTab === 'crossover'  && <Crossovers />}
+            {activeTab === 'mixer'     && <Mixers />}
+            {activeTab === 'extras'    && <Dashboard />}
+            {activeTab === 'pipeline' && <Pipeline />}
           </div>
         </main>
       </div>
